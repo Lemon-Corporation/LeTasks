@@ -282,7 +282,7 @@ app.add_middleware(
 )
 
 # Routes
-@app.post("/token")
+@app.post("/api/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -297,7 +297,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/users/", response_model=UserOut)
+@app.post("/api/users/", response_model=UserOut)
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = User(username=user.username, email=user.email, hashed_password=get_password_hash(user.password))
     db.add(db_user)
@@ -305,18 +305,18 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@app.get("/users/me", response_model=UserProfile)
+@app.get("/api/users/me", response_model=UserProfile)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-@app.get("/users/me/stats", response_model=UserStats)
+@app.get("/api/users/me/stats", response_model=UserStats)
 async def read_user_stats(current_user: User = Depends(get_current_active_user)):
     db = SessionLocal()
     stats = get_user_stats(db, current_user.id)
     db.close()
     return stats
 
-@app.get("/users/me/tasks", response_model=List[TaskOut])
+@app.get("/api/users/me/tasks", response_model=List[TaskOut])
 async def read_user_tasks(current_user: User = Depends(get_current_active_user)):
     db = SessionLocal()
     try:
@@ -325,7 +325,7 @@ async def read_user_tasks(current_user: User = Depends(get_current_active_user))
     finally:
         db.close()
 
-@app.get("/users/me/achievements", response_model=List[Achievement])
+@app.get("/api/users/me/achievements", response_model=List[Achievement])
 async def read_user_achievements(current_user: User = Depends(get_current_active_user)):
     db = SessionLocal()
     achievements = get_user_achievements(db, current_user.id)
@@ -333,7 +333,7 @@ async def read_user_achievements(current_user: User = Depends(get_current_active
     return achievements
 
 
-@app.put("/users/me", response_model=UserProfile)
+@app.put("/api/users/me", response_model=UserProfile)
 async def update_user(
     user_update: UserUpdate,
     current_user: User = Depends(get_current_user),
@@ -352,7 +352,7 @@ async def update_user(
     db.refresh(current_user)
     return current_user
 
-@app.post("/projects/", response_model=ProjectOut)
+@app.post("/api/projects/", response_model=ProjectOut)
 async def create_project(project: ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_project = Project(name=project.name)
     db_project.users.append(current_user)
@@ -361,7 +361,7 @@ async def create_project(project: ProjectCreate, current_user: User = Depends(ge
     db.refresh(db_project)
     return db_project
 
-@app.get("/projects/", response_model=List[ProjectOut])
+@app.get("/api/projects/", response_model=List[ProjectOut])
 async def read_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.is_superuser:
         # Если пользователь - администратор, возвращаем все проекты
@@ -371,7 +371,7 @@ async def read_projects(current_user: User = Depends(get_current_user), db: Sess
         return db.query(Project).filter(Project.users.contains(current_user)).all()
 
 
-@app.post("/tasks/", response_model=TaskOut)
+@app.post("/api/tasks/", response_model=TaskOut)
 async def create_task(
     task: TaskCreate, 
     current_user: User = Depends(get_current_user), 
@@ -406,7 +406,7 @@ async def create_task(
     return db_task
 
 
-@app.get("/tasks/", response_model=List[TaskOut])
+@app.get("/api/tasks/", response_model=List[TaskOut])
 async def read_tasks(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
@@ -428,7 +428,7 @@ async def read_tasks(
     
     return user_tasks
 
-@app.put("/tasks/{task_id}", response_model=TaskOut)
+@app.put("/api/tasks/{task_id}", response_model=TaskOut)
 async def update_task(
     task_id: int, 
     task: TaskUpdate, 
@@ -449,7 +449,7 @@ async def update_task(
     return db_task
 
 
-@app.delete("/tasks/{task_id}")
+@app.delete("/api/tasks/{task_id}")
 async def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
@@ -478,13 +478,13 @@ async def get_project_users(
 
 
 # Superuser dashboard routes
-@app.get("/admin/users", response_model=List[UserOut])
+@app.get("/api/admin/users", response_model=List[UserOut])
 async def read_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
     return db.query(User).all()
 
-@app.post("/admin/assign-project")
+@app.post("/api/admin/assign-project")
 async def assign_project_to_user(
     request: AssignProjectRequest, 
     current_user: User = Depends(get_current_user), 
@@ -506,7 +506,7 @@ async def assign_project_to_user(
     return {"detail": "Project assigned successfully"}
 
 
-@app.post("/admin/create-task-for-user")
+@app.post("/api/admin/create-task-for-user")
 async def create_task_for_user(task: TaskCreate, user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -519,7 +519,7 @@ async def create_task_for_user(task: TaskCreate, user_id: int, current_user: Use
     db.refresh(db_task)
     return db_task
 
-@app.put("/admin/users/{user_id}/rank")
+@app.put("/api/admin/users/{user_id}/rank")
 async def update_rank(user_id: int, rank: str, current_user: User = Depends(get_current_active_user)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -530,7 +530,7 @@ async def update_rank(user_id: int, rank: str, current_user: User = Depends(get_
         return {"message": "Rank updated successfully"}
     raise HTTPException(status_code=404, detail="User not found")
 
-@app.post("/admin/users/{user_id}/achievements")
+@app.post("/api/admin/users/{user_id}/achievements")
 async def add_achievement(user_id: int, achievement: str, current_user: User = Depends(get_current_active_user)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
