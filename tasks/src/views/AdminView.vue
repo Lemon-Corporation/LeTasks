@@ -171,9 +171,6 @@
   const user = computed(() => store.state.user)
   
   onMounted(async () => {
-    if (user != "admin"){
-      router.push('/')
-    }
     await fetchUsers()
     await fetchProjects()
   })

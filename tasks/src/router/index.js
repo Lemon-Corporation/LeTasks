@@ -27,7 +27,7 @@ const routes = [
     component: ProfileView
   },
   {
-    path: '/dashboard/admin',
+    path: '/thisisadmin',
     name: 'admin',
     component: AdminView
   },

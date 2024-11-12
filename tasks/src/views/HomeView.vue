@@ -2,26 +2,28 @@
   <div class="min-h-screen bg-black p-4 sm:p-6">
     <!-- Navbar -->
     <nav class="bg-gray-900/50 backdrop-blur-sm border border-yellow-600/20 rounded-lg p-4 mb-6">
-      <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-mono text-white">Le Tasks</h1>
-        <div class="flex items-center space-x-4">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+        <h1 class="text-2xl font-mono text-white mb-4 sm:mb-0">Le Tasks</h1>
+        <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <select
             v-model="selectedProject"
             @change="changeProject"
-            class="bg-black border border-yellow-600/30 rounded px-3 py-1 text-white font-mono focus:outline-none focus:border-yellow-500"
+            class="w-full sm:w-auto bg-black border border-yellow-600/30 rounded px-3 py-1 text-white font-mono focus:outline-none focus:border-yellow-500 mb-2 sm:mb-0"
           >
             <option value="">All Projects</option>
             <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
           </select>
           <div v-if="user" class="flex items-center space-x-2">
-            <a href="/profile"><img :src="user.avatar" alt="User Avatar" class="w-8 h-8 rounded-full"></a>
-            <a href="/profile"><span class="text-white font-mono">{{ user.username }}</span></a>
+            <a href="/profile" class="flex items-center space-x-2">
+              <img :src="user.avatar" alt="User Avatar" class="w-8 h-8 rounded-full">
+              <span class="text-white font-mono">{{ user.username }}</span>
+            </a>
             <button @click="logout" class="text-yellow-500 hover:text-yellow-400">Logout</button>
           </div>
           <button
             v-else
             @click="$router.push('/auth/sign-in')"
-            class="bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/50 text-yellow-500 font-mono px-4 py-1 rounded transition-all duration-300"
+            class="w-full sm:w-auto bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/50 text-yellow-500 font-mono px-4 py-1 rounded transition-all duration-300"
           >
             [ LOGIN ]
           </button>
@@ -31,37 +33,37 @@
   
     <div class="max-w-4xl mx-auto">
       <!-- Task Input Section -->
-      <div class="bg-gray-900/50 backdrop-blur-sm border border-yellow-600/20 rounded-lg p-6 mb-8">
+      <div class="bg-gray-900/50 backdrop-blur-sm border border-yellow-600/20 rounded-lg p-4 sm:p-6 mb-8">
         <form @submit.prevent="addTask" class="space-y-4">
-          <div class="flex flex-wrap gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
             <input
               v-model="newTask.title"
               type="text"
               placeholder="ENTER NEW TASK"
               required
-              class="flex-grow bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500 placeholder-gray-600"
+              class="w-full bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500 placeholder-gray-600"
             />
             <select
               v-model="newTask.priority"
               required
-              class="bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
+              class="w-full sm:w-auto bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
             >
               <option value="low">LOW PRIORITY</option>
               <option value="medium">MEDIUM PRIORITY</option>
               <option value="high">HIGH PRIORITY</option>
             </select>
           </div>
-          <div class="flex flex-wrap gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
             <input
               v-model="newTask.due_date"
               type="text"
               placeholder="DD.MM"
               required
-              class="bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
+              class="w-full sm:w-auto bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
             />
             <select
               v-model="newTask.assignee"
-              class="flex-grow bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
+              class="w-full bg-black border border-yellow-600/30 rounded px-4 py-2 text-white font-mono focus:outline-none focus:border-yellow-500"
               :disabled="!selectedProject"
             >
               <option value="">Select User</option>
@@ -86,7 +88,7 @@
       </div>
   
       <!-- Stats Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div class="bg-gray-900/50 border border-yellow-600/20 rounded-lg p-4">
           <div class="text-gray-500 font-mono text-sm mb-1">TOTAL TASKS</div>
           <div class="text-white font-mono text-2xl">{{ filteredTasks.length }}</div>
@@ -106,7 +108,7 @@
       </div>
   
       <!-- Kanban Board -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-6">
         <div 
           v-for="status in ['To Do', 'In Progress', 'Done']" 
           :key="status" 
@@ -143,7 +145,7 @@
               <div v-if="task.description" class="mt-2 text-gray-400 text-sm truncate">
                 {{ task.description }}
               </div>
-              <div class="mt-2 flex justify-end space-x-2">
+              <div class="mt-2 flex flex-wrap justify-end gap-2">
                 <button
                   v-if="task.status !== 'In Progress'"
                   @click.stop="moveToInProgress(task)"
@@ -179,8 +181,8 @@
       </div>
       
       <!-- Task Details Modal -->
-      <div v-if="selectedTask" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-        <div class="bg-gray-900 border border-yellow-600/20 rounded-lg p-6 max-w-2xl w-full">
+      <div v-if="selectedTask" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-yellow-600/20 rounded-lg p-6 w-full max-w-md">
           <h2 class="text-2xl font-bold text-white mb-4">{{ selectedTask.title }}</h2>
           <div class="mb-4">
             <label class="block text-yellow-500 font-mono mb-2">Description</label>
@@ -190,7 +192,7 @@
               rows="4"
             ></textarea>
           </div>
-          <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label class="block text-yellow-500 font-mono mb-2">Status</label>
               <select v-model="selectedTask.status" class="w-full bg-gray-800 text-white rounded p-2">
@@ -226,7 +228,7 @@
               class="w-full bg-gray-800 text-white rounded p-2"
             />
           </div>
-          <div class="flex justify-end space-x-4">
+          <div class="flex flex-wrap justify-end gap-4">
             <button @click="closeTaskDetails" class="bg-gray-700 text-white px-4 py-2 rounded">Close</button>
             <button @click="saveTaskDetails" class="bg-yellow-600 text-white px-4 py-2 rounded">Save</button>
             <button
