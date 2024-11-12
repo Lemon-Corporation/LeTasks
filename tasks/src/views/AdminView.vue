@@ -180,7 +180,7 @@
   
   async function fetchUsers() {
     try {
-      const response = await fetch('http://localhost:8000/api/admin/users', {
+      const response = await fetch('/api/admin/users', {
         headers: { Authorization: `Bearer ${store.state.token}` }
       })
       if (response.ok) {
@@ -195,7 +195,7 @@
   
   async function fetchProjects() {
     try {
-      const response = await fetch('http://localhost:8000/api/projects/', {
+      const response = await fetch('/api/projects/', {
         headers: { Authorization: `Bearer ${store.state.token}` }
       })
       if (response.ok) {
@@ -212,7 +212,7 @@
     if (!newProjectName.value.trim()) return
   
     try {
-      const response = await fetch('http://localhost:8000/api/projects/', {
+      const response = await fetch('/api/projects/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +242,7 @@
   
     try {
       console.log("Assigning user to project", { user_id: userId, project_id: projectId });
-      const response = await fetch('http://localhost:8000/api/admin/assign-project', {
+      const response = await fetch('/api/admin/assign-project', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +264,7 @@
   
   async function removeUserFromProject(projectId, userId) {
     try {
-      const response = await fetch('http://localhost:8000/api/admin/remove-user-from-project', {
+      const response = await fetch('/api/admin/remove-user-from-project', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +292,7 @@
     if (!selectedUserId.value) return
   
     try {
-      const response = await fetch('http://localhost:8000/api/admin/create-task-for-user', {
+      const response = await fetch('/api/admin/create-task-for-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

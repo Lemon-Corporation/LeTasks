@@ -36,7 +36,7 @@ const store = createStore({
         formData.append('username', credentials.username)
         formData.append('password', credentials.password)
 
-        const response = await axios.post('http://localhost:8000/api/token', formData, {
+        const response = await axios.post('/api/token', formData, {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           }
@@ -50,7 +50,7 @@ const store = createStore({
     },
     async register({ dispatch }, userData) {
       try {
-        await axios.post('http://localhost:8000/api/users/', userData)
+        await axios.post('/api/users/', userData)
         await dispatch('login', { username: userData.username, password: userData.password })
       } catch (error) {
         console.error('Registration failed:', error)
@@ -63,7 +63,7 @@ const store = createStore({
         return
       }
       try {
-        const response = await axios.get('http://localhost:8000/api/users/me', {
+        const response = await axios.get('/api/users/me', {
           headers: { Authorization: `Bearer ${state.token}` }
         })
         commit('setUser', response.data)
@@ -84,7 +84,7 @@ const store = createStore({
         return
       }
       try {
-        let url = 'http://localhost:8000/api/tasks/'
+        let url = '/api/tasks/'
         if (projectId) {
           url += `?project_id=${projectId}`
         }
@@ -103,7 +103,7 @@ const store = createStore({
     async addTask({ commit, state }, task) {
       try {
         console.log('Sending task to server:', task) // Log the task data
-        const response = await axios.post('http://localhost:8000/api/tasks/', task, {
+        const response = await axios.post('/api/tasks/', task, {
           headers: { 
             Authorization: `Bearer ${state.token}`,
             'Content-Type': 'application/json'
@@ -122,7 +122,7 @@ const store = createStore({
     async updateTask({ dispatch, state }, task) {
       try {
         console.log('Updating task:', task); // Добавим лог для отладки
-        const response = await axios.put(`http://localhost:8000/api/tasks/${task.id}`, task, {
+        const response = await axios.put(`/api/tasks/${task.id}`, task, {
           headers: { 
             Authorization: `Bearer ${state.token}`,
             'Content-Type': 'application/json'
@@ -140,7 +140,7 @@ const store = createStore({
     },
     async deleteTask({ dispatch, state }, taskId) {
       try {
-        await axios.delete(`http://localhost:8000/api/tasks/${taskId}`, {
+        await axios.delete(`/api/tasks/${taskId}`, {
           headers: { Authorization: `Bearer ${state.token}` }
         })
         await dispatch('fetchTasks')
@@ -151,7 +151,7 @@ const store = createStore({
     },
     async fetchProjects({ commit, state }) {
       try {
-        const response = await axios.get('http://localhost:8000/api/projects/', {
+        const response = await axios.get('/api/projects/', {
           headers: { Authorization: `Bearer ${state.token}` }
         })
         commit('setProjects', response.data)

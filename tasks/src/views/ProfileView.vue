@@ -164,7 +164,7 @@ onMounted(async () => {
 
 async function fetchProfile() {
   try {
-    const response = await fetch('http://localhost:8000/api/users/me', {
+    const response = await fetch('/api/users/me', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     if (response.ok) {
@@ -194,7 +194,7 @@ async function updateProfile() {
       updateData.password = newPassword.value
     }
 
-    const response = await fetch('http://localhost:8000/api/users/me', {
+    const response = await fetch('/api/users/me', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ async function updateProfile() {
 
 async function fetchUserStats() {
   try {
-    const response = await fetch('http://localhost:8000/api/users/me/stats', {
+    const response = await fetch('/api/users/me/stats', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     if (response.ok) {
@@ -235,7 +235,7 @@ async function fetchUserStats() {
 
 async function fetchCurrentTasks() {
   try {
-    const response = await fetch('http://localhost:8000/api/users/me/tasks', {
+    const response = await fetch('/api/users/me/tasks', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     if (response.ok) {
@@ -250,7 +250,7 @@ async function fetchCurrentTasks() {
 
 async function fetchAchievements() {
   try {
-    const response = await fetch('http://localhost:8000/api/users/me/achievements', {
+    const response = await fetch('/api/users/me/achievements', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     if (response.ok) {

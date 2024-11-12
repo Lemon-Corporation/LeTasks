@@ -299,7 +299,7 @@ const fetchProjectUsers = async (projectId) => {
     return
   }
   try {
-    const response = await axios.get(`http://localhost:8000/api/projects/${projectId}/users`, {
+    const response = await axios.get(`/api/projects/${projectId}/users`, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     projectUsers.value = response.data
