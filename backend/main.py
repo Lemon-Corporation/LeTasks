@@ -153,6 +153,9 @@ class TaskUpdate(BaseModel):
     project_id: Optional[int] = None
     assignee: Optional[str] = None
 
+    class Config:
+        orm_mode = True
+
 class AssignProjectRequest(BaseModel):
     user_id: int
     project_id: int
@@ -403,11 +406,12 @@ async def read_tasks(
 
 @app.put("/api/tasks/{task_id}", response_model=TaskOut)
 async def update_task(
-    task_id: int, 
-    task: TaskUpdate, 
-    current_user: User = Depends(get_current_user), 
+    task_id: int,
+    task: TaskUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    print(f"Received task data: {task}")  # Добавьте логирование
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -416,7 +420,7 @@ async def update_task(
         raise HTTPException(status_code=403, detail="Not authorized to update this task")
 
     update_data = task.dict(exclude_unset=True)
-    
+
     if 'assignee' in update_data:
         assignee = db.query(User).filter(User.username == update_data['assignee']).first()
         if not assignee:
@@ -430,6 +434,7 @@ async def update_task(
     db.commit()
     db.refresh(db_task)
     return db_task
+
 
 @app.delete("/api/tasks/{task_id}")
 async def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
