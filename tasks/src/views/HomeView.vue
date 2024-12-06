@@ -429,13 +429,13 @@ const addTask = async () => {
     status: newTask.value.status,
     project_id: parseInt(selectedProject.value),
     assignee: newTask.value.assignee
-  }
+  };
 
-  console.log('Sending task data:', taskData)
+  console.log('Sending task data:', taskData);
 
   try {
-    await store.dispatch('addTask', taskData)
-    console.log('Task added successfully')
+    await store.dispatch('addTask', taskData);
+    console.log('Task added successfully');
     newTask.value = {
       title: '',
       description: '',
@@ -443,12 +443,12 @@ const addTask = async () => {
       due_date: '',
       assignee: '',
       status: 'To Do'
-    }
-    await store.dispatch('fetchTasks', selectedProject.value)
+    };
+    await store.dispatch('fetchTasks', selectedProject.value);
   } catch (error) {
-    console.error("Failed to add task:", error)
+    console.error("Failed to add task:", error);
     if (error.response) {
-      console.error("Server response:", error.response.data)
+      console.error("Server response:", error.response.data);
     }
   }
 }
@@ -501,7 +501,7 @@ const saveTaskDetails = async () => {
   } catch (error) {
     console.error('Failed to update task:', error);
   }
-};
+}
 
 const toggleTaskStatus = async (task) => {
   await store.dispatch('updateTask', {
