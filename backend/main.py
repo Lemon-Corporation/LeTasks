@@ -16,9 +16,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
-
 # Database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:////app/data/test.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -29,13 +28,11 @@ user_project = Table('user_project', Base.metadata,
     Column('project_id', Integer, ForeignKey('projects.id'))
 )
 
-class Achievement(Base):
-    __tablename__ = "achievements"
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    title: Mapped[str]
-    description: Mapped[str]
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped["User"] = relationship("User", back_populates="achievements")
+
+class Achievement(BaseModel):
+    id: int
+    title: str
+    description: str
 
 class User(Base):
     __tablename__ = "users"
@@ -46,10 +43,29 @@ class User(Base):
     is_superuser: Mapped[bool] = mapped_column(default=False)
     projects: Mapped[List["Project"]] = relationship("Project", secondary=user_project, back_populates="users")
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="assignee")
-    achievements: Mapped[List["Achievement"]] = relationship("Achievement", back_populates="user")
+    achievements: Mapped[List[Achievement]] = []
     rank: Mapped[Optional[str]] = mapped_column(default="Employee")
-    is_active: Mapped[bool] = mapped_column(default=True)
-    avatar: Mapped[Optional[str]]
+    is_active: Mapped[bool] = mapped_column(default=True)  # Добавляем значение по умолчанию
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    avatar: Optional[str] = None
+    password: Optional[str] = None
+
+class UserProfile(BaseModel):
+    username: str
+    email: str
+    avatar: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+class UserStats(BaseModel):
+    totalTasks: int
+    completedTasks: int
+    ongoingTasks: int
+    overdueTasks: int
 
 class Project(Base):
     __tablename__ = "projects"
@@ -69,37 +85,16 @@ class Task(Base):
     completed: Mapped[bool] = mapped_column(default=False)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
     project: Mapped[Project] = relationship("Project", back_populates="tasks")
-    assignee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
-    assignee: Mapped[Optional[User]] = relationship("User", back_populates="tasks")
+    assignee_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    assignee: Mapped[User] = relationship("User", back_populates="tasks")
 
 Base.metadata.create_all(bind=engine)
 
-# Pydantic models
+# Pydantic models for API interactions
 class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    avatar: Optional[str] = None
-    password: Optional[str] = None
-
-class UserProfile(BaseModel):
-    username: str
-    email: str
-    avatar: Optional[str] = None
-    rank: Optional[str] = None
-
-    class Config:
-        orm_mode = True
-
-class UserStats(BaseModel):
-    totalTasks: int
-    completedTasks: int
-    ongoingTasks: int
-    overdueTasks: int
 
 class ProjectCreate(BaseModel):
     name: str
@@ -107,9 +102,6 @@ class ProjectCreate(BaseModel):
 class ProjectOut(BaseModel):
     id: int
     name: str
-
-    class Config:
-        orm_mode = True
 
 class UserOut(BaseModel):
     id: int
@@ -151,23 +143,12 @@ class TaskUpdate(BaseModel):
     due_date: Optional[str] = None
     completed: Optional[bool] = None
     project_id: Optional[int] = None
-    assignee: Optional[str] = None
-
-    class Config:
-        orm_mode = True
+    assignee_id: Optional[int] = None
 
 class AssignProjectRequest(BaseModel):
     user_id: int
     project_id: int
-
-class AchievementOut(BaseModel):
-    id: int
-    title: str
-    description: str
-
-    class Config:
-        orm_mode = True
-
+    
 # Security
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
@@ -193,8 +174,9 @@ def get_password_hash(password):
 def get_user(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
+
 def authenticate_user(db, username: str, password: str):
-    user = get_user(db, username)
+    user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.hashed_password):
         return False
     return user
@@ -222,7 +204,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
-    user = get_user(db, username)
+    user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
     return user
@@ -234,7 +216,7 @@ def get_user_stats(db: Session, user_id: int):
     overdue_tasks = db.query(Task).filter(
         Task.assignee_id == user_id,
         Task.status != "Done",
-        Task.due_date < datetime.now().strftime("%Y-%m-%d")
+        Task.due_date < datetime.now()
     ).count()
 
     return UserStats(
@@ -250,6 +232,7 @@ def get_user_tasks(db: Session, user_id: int):
 def get_user_achievements(db: Session, user_id: int):
     return db.query(Achievement).filter(Achievement.user_id == user_id).all()
 
+
 def update_user_rank(db: Session, user_id: int, new_rank: str):
     user = db.query(User).filter(User.id == user_id).first()
     if user:
@@ -258,12 +241,34 @@ def update_user_rank(db: Session, user_id: int, new_rank: str):
         return True
     return False
 
-def add_user_achievement(db: Session, user_id: int, achievement_title: str, achievement_description: str):
-    new_achievement = Achievement(title=achievement_title, description=achievement_description, user_id=user_id)
+def add_user_achievement(db: Session, user_id: int, achievement_title: str):
+    new_achievement = Achievement(title=achievement_title, user_id=user_id)
     db.add(new_achievement)
     db.commit()
     return new_achievement
 
+
+def get_current_active_user(db: Session = Depends(SessionLocal), token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        # Декодируем токен, используя секретный ключ и алгоритм
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # Получаем пользователя по его ID
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user is None or not user.is_active:
+        raise credentials_exception
+    return user
+    
 # FastAPI app
 app = FastAPI()
 
@@ -305,16 +310,28 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @app.get("/api/users/me/stats", response_model=UserStats)
-async def read_user_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return get_user_stats(db, current_user.id)
+async def read_user_stats(current_user: User = Depends(get_current_active_user)):
+    db = SessionLocal()
+    stats = get_user_stats(db, current_user.id)
+    db.close()
+    return stats
 
 @app.get("/api/users/me/tasks", response_model=List[TaskOut])
-async def read_user_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return get_user_tasks(db, current_user.id)
+async def read_user_tasks(current_user: User = Depends(get_current_active_user)):
+    db = SessionLocal()
+    try:
+        tasks = db.query(Task).filter(Task.assignee_id == current_user.id).all()
+        return tasks
+    finally:
+        db.close()
 
-@app.get("/api/users/me/achievements", response_model=List[AchievementOut])
-async def read_user_achievements(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return get_user_achievements(db, current_user.id)
+@app.get("/api/users/me/achievements", response_model=List[Achievement])
+async def read_user_achievements(current_user: User = Depends(get_current_active_user)):
+    db = SessionLocal()
+    achievements = get_user_achievements(db, current_user.id)
+    db.close()
+    return achievements
+
 
 @app.put("/api/users/me", response_model=UserProfile)
 async def update_user(
@@ -329,7 +346,7 @@ async def update_user(
     if user_update.avatar:
         current_user.avatar = user_update.avatar
     if user_update.password:
-        current_user.hashed_password = get_password_hash(user_update.password)
+        current_user.hashed_password = pwd_context.hash(user_update.password)
     
     db.commit()
     db.refresh(current_user)
@@ -347,9 +364,12 @@ async def create_project(project: ProjectCreate, current_user: User = Depends(ge
 @app.get("/api/projects/", response_model=List[ProjectOut])
 async def read_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.is_superuser:
+        # Если пользователь - администратор, возвращаем все проекты
         return db.query(Project).all()
     else:
-        return current_user.projects
+        # Если пользователь - обычный, возвращаем только связанные с ним проекты
+        return db.query(Project).filter(Project.users.contains(current_user)).all()
+
 
 @app.post("/api/tasks/", response_model=TaskOut)
 async def create_task(
@@ -357,7 +377,6 @@ async def create_task(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    print(f"Received task data: {task}")  # Add this line for debugging
     project = db.query(Project).filter(Project.id == task.project_id).first()
     
     if not project:
@@ -386,14 +405,18 @@ async def create_task(
     db.refresh(db_task)
     return db_task
 
+
 @app.get("/api/tasks/", response_model=List[TaskOut])
 async def read_tasks(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
+    # Если пользователь является суперпользователем, возвращаем все задачи
     if current_user.is_superuser:
         return db.query(Task).all()
     
+    # Получаем все задачи, которые либо назначены текущему пользователю,
+    # либо относятся к проектам, в которых участвует текущий пользователь
     user_tasks = (
         db.query(Task)
         .filter(
@@ -407,43 +430,36 @@ async def read_tasks(
 
 @app.put("/api/tasks/{task_id}", response_model=TaskOut)
 async def update_task(
-    task_id: int,
-    task: TaskUpdate,
-    current_user: User = Depends(get_current_user),
+    task_id: int, 
+    task: TaskUpdate, 
+    current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    print(f"Received task data: {task}")  # Добавьте логирование
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if current_user not in db_task.project.users and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not authorized to update this task")
-
-    update_data = task.dict(exclude_unset=True)
-
-    if 'assignee' in update_data:
-        assignee = db.query(User).filter(User.username == update_data['assignee']).first()
-        if not assignee:
-            raise HTTPException(status_code=404, detail=f"User {update_data['assignee']} not found")
-        update_data['assignee_id'] = assignee.id
-        del update_data['assignee']
-
-    for key, value in update_data.items():
+    # Проверка прав доступа
+    # Обновление задачи
+    for key, value in task.dict(exclude_unset=True).items():
         setattr(db_task, key, value)
 
     db.commit()
     db.refresh(db_task)
     return db_task
 
+
 @app.delete("/api/tasks/{task_id}")
 async def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if not current_user.is_superuser and db_task.assignee != current_user:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this task")
     db.delete(db_task)
     db.commit()
     return {"detail": "Task deleted successfully"}
+
 
 @app.get("/api/projects/{project_id}/users", response_model=List[UserOut])
 async def get_project_users(
@@ -460,6 +476,7 @@ async def get_project_users(
     
     return project.users
 
+
 # Superuser dashboard routes
 @app.get("/api/admin/users", response_model=List[UserOut])
 async def read_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -473,6 +490,8 @@ async def assign_project_to_user(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
+    print(f"Assigning user_id {request.user_id} to project_id {request.project_id}")
+    
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -482,89 +501,42 @@ async def assign_project_to_user(
     if not user or not project:
         raise HTTPException(status_code=404, detail="User or Project not found")
     
-    if project not in user.projects:
-        user.projects.append(project)
-        db.commit()
+    user.projects.append(project)
+    db.commit()
     return {"detail": "Project assigned successfully"}
 
-@app.post("/api/admin/remove-user-from-project")
-async def remove_user_from_project(
-    request: AssignProjectRequest, 
-    current_user: User = Depends(get_current_user), 
-    db: Session = Depends(get_db)
-):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    user = db.query(User).filter(User.id == request.user_id).first()
-    project = db.query(Project).filter(Project.id == request.project_id).first()
-    
-    if not user or not project:
-        raise HTTPException(status_code=404, detail="User or Project not found")
-    
-    if project in user.projects:
-        user.projects.remove(project)
-        db.commit()
-    return {"detail": "User removed from project successfully"}
 
 @app.post("/api/admin/create-task-for-user")
-async def create_task_for_user(
-    task: TaskCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+async def create_task_for_user(task: TaskCreate, user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
-
-    project = db.query(Project).filter(Project.id == task.project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    assignee = None
-    if task.assignee:
-        assignee = db.query(User).filter(User.username == task.assignee).first()
-        if not assignee:
-            raise HTTPException(status_code=404, detail=f"User {task.assignee} not found")
-
-    db_task = Task(
-        title=task.title,
-        description=task.description,
-        status=task.status,
-        priority=task.priority,
-        due_date=task.due_date,
-        project_id=task.project_id,
-        assignee_id=assignee.id if assignee else None
-    )
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db_task = Task(**task.dict(), assignee_id=user_id)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
     return db_task
 
 @app.put("/api/admin/users/{user_id}/rank")
-async def update_rank(
-    user_id: int,
-    rank: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+async def update_rank(user_id: int, rank: str, current_user: User = Depends(get_current_active_user)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
+    db = SessionLocal()
     success = update_user_rank(db, user_id, rank)
+    db.close()
     if success:
         return {"message": "Rank updated successfully"}
     raise HTTPException(status_code=404, detail="User not found")
 
 @app.post("/api/admin/users/{user_id}/achievements")
-async def add_achievement(
-    user_id: int,
-    title: str,
-    description: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+async def add_achievement(user_id: int, achievement: str, current_user: User = Depends(get_current_active_user)):
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
-    new_achievement = add_user_achievement(db, user_id, title, description)
+    db = SessionLocal()
+    new_achievement = add_user_achievement(db, user_id, achievement)
+    db.close()
     return {"message": "Achievement added successfully", "achievement": new_achievement}
 
 # Initialization
@@ -577,7 +549,7 @@ def init_db():
             superuser = User(
                 username="ArtShocheck",
                 email="artshocheck@vk.com",
-                hashed_password=get_password_hash("1234567890KEKAhaha"),
+                hashed_password=get_password_hash("1234567890KEKAhaha!"),
                 is_superuser=True,
                 rank="Employee",
                 is_active=True
@@ -587,7 +559,7 @@ def init_db():
             db.refresh(superuser)
 
         # Create initial projects
-        initial_projects = ["LemonID", "Lemma", "TracsAI", "Worlds", "Mayont", "LemOS", "Sontrum", "Artefact", "SafeThisSpace", "Citrus"]
+        initial_projects = ["LemonID", "Lemma", "TracsAI", "Worlds", "Mayont", "LemOS", "Sontrum"]
         for project_name in initial_projects:
             project = db.query(Project).filter(Project.name == project_name).first()
             if not project:

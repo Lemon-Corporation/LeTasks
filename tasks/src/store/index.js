@@ -142,11 +142,11 @@ const store = createStore({
       try {
         await axios.delete(`/api/tasks/${taskId}`, {
           headers: { Authorization: `Bearer ${state.token}` }
-        });
-        await dispatch('fetchTasks');
+        })
+        await dispatch('fetchTasks')
       } catch (error) {
-        console.error('Failed to delete task:', error);
-        throw error;
+        console.error('Failed to delete task:', error)
+        throw error
       }
     },
     async fetchProjects({ commit, state }) {
