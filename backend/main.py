@@ -357,6 +357,7 @@ async def create_task(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
+    print(f"Received task data: {task}")  # Add this line for debugging
     project = db.query(Project).filter(Project.id == task.project_id).first()
     
     if not project:

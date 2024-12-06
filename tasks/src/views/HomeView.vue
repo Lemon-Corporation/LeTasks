@@ -427,7 +427,7 @@ const addTask = async () => {
     priority: newTask.value.priority,
     due_date: formatDateForBackend(newTask.value.due_date),
     status: newTask.value.status,
-    project_id: parseInt(selectedProject.value),
+    project_id: parseInt(selectedProject.value), // Ensure this is an integer
     assignee: newTask.value.assignee
   };
 
