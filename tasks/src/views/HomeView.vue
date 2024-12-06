@@ -492,15 +492,16 @@ const saveTaskDetails = async () => {
   try {
     const updatedTask = {
       ...selectedTask.value,
-      due_date: formatDateForBackend(selectedTask.value.due_date)
-    }
-    await store.dispatch('updateTask', updatedTask)
-    closeTaskDetails()
-    await store.dispatch('fetchTasks', selectedProject.value)
+      due_date: formatDateForBackend(selectedTask.value.due_date),
+      project_id: parseInt(selectedProject.value) // Добавляем project_id
+    };
+    await store.dispatch('updateTask', updatedTask);
+    closeTaskDetails();
+    await store.dispatch('fetchTasks', selectedProject.value);
   } catch (error) {
-    console.error('Failed to update task:', error)
+    console.error('Failed to update task:', error);
   }
-}
+};
 
 const toggleTaskStatus = async (task) => {
   await store.dispatch('updateTask', {

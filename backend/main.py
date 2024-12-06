@@ -435,7 +435,6 @@ async def update_task(
     db.refresh(db_task)
     return db_task
 
-
 @app.delete("/api/tasks/{task_id}")
 async def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
