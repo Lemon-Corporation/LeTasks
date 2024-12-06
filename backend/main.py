@@ -454,8 +454,6 @@ async def delete_task(task_id: int, current_user: User = Depends(get_current_use
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    if not current_user.is_superuser and db_task.assignee != current_user:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this task")
     db.delete(db_task)
     db.commit()
     return {"detail": "Task deleted successfully"}
