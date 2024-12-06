@@ -572,7 +572,7 @@ def init_db():
             superuser = User(
                 username="ArtShocheck",
                 email="artshocheck@vk.com",
-                hashed_password=get_password_hash("1234567890KEKAhaha!"),
+                hashed_password=get_password_hash("1234567890KEKAhaha"),
                 is_superuser=True,
                 rank="Employee",
                 is_active=True
@@ -582,7 +582,7 @@ def init_db():
             db.refresh(superuser)
 
         # Create initial projects
-        initial_projects = ["LemonID", "Lemma", "TracsAI", "Worlds", "Mayont", "LemOS", "Sontrum"]
+        initial_projects = ["LemonID", "Lemma", "TracsAI", "Worlds", "Mayont", "LemOS", "Sontrum", "Artefact", "SafeThisSpace", "Citrus"]
         for project_name in initial_projects:
             project = db.query(Project).filter(Project.name == project_name).first()
             if not project:
