@@ -27,19 +27,17 @@ const store = createStore({
     },
     setProjects(state, projects) {
       state.projects = projects
+    },
+    addTask(state, task) {
+      state.tasks.push(task)
     }
   },
   actions: {
     async login({ commit, dispatch }, credentials) {
       try {
-        const formData = new FormData()
-        formData.append('username', credentials.username)
-        formData.append('password', credentials.password)
-
-        const response = await axios.post('/api/token', formData, {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+        const response = await axios.post('/api/token', {
+          username: credentials.username,
+          password: credentials.password
         })
         commit('setToken', response.data.access_token)
         await dispatch('fetchUser')
@@ -78,17 +76,13 @@ const store = createStore({
     logout({ commit }) {
       commit('clearUserData')
     },
-    async fetchTasks({ commit, state }, projectId = null) {
+    async fetchTasks({ commit, state }) {
       if (!state.token) {
         console.warn('No token found, user is not authenticated')
         return
       }
       try {
-        let url = '/api/tasks/'
-        if (projectId) {
-          url += `?project_id=${projectId}`
-        }
-        const response = await axios.get(url, {
+        const response = await axios.get('/api/users/me/tasks', {
           headers: { Authorization: `Bearer ${state.token}` }
         })
         commit('setTasks', response.data)
@@ -104,7 +98,7 @@ const store = createStore({
       try {
         console.log('Sending task to server:', task) // Log the task data
         const response = await axios.post('/api/tasks/', task, {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${state.token}`,
             'Content-Type': 'application/json'
           }
@@ -137,7 +131,7 @@ const store = createStore({
         }
         throw error;
       }
-    },    
+    },
     async deleteTask({ dispatch, state }, taskId) {
       try {
         await axios.delete(`/api/tasks/${taskId}`, {
