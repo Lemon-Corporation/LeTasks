@@ -102,21 +102,21 @@ const store = createStore({
     },
     async addTask({ commit, state }, task) {
       try {
-        console.log('Sending task to server:', task); // Log the task data
+        console.log('Sending task to server:', task) // Log the task data
         const response = await axios.post('/api/tasks/', task, {
           headers: { 
             Authorization: `Bearer ${state.token}`,
             'Content-Type': 'application/json'
           }
-        });
-        console.log('Server response:', response.data); // Log the server response
-        commit('addTask', response.data);
+        })
+        console.log('Server response:', response.data) // Log the server response
+        commit('addTask', response.data)
       } catch (error) {
-        console.error('Failed to add task:', error);
+        console.error('Failed to add task:', error)
         if (error.response) {
-          console.error('Server error response:', error.response.data);
+          console.error('Server error response:', error.response.data)
         }
-        throw error;
+        throw error
       }
     },
     async updateTask({ dispatch, state }, task) {

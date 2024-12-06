@@ -388,10 +388,10 @@ onMounted(async () => {
       await store.dispatch('fetchTasks', selectedProject.value)
     } catch (error) {
       console.error('Failed to fetch initial data:', error)
-      //router.push('/auth/sign-in')
+      router.push('/auth/sign-in')
     }
   } else {
-    //router.push('/auth/sign-in')
+    router.push('/auth/sign-in')
   }
   intervalId.value = setInterval(() => {
     store.dispatch('fetchTasks', selectedProject.value)
@@ -427,15 +427,15 @@ const addTask = async () => {
     priority: newTask.value.priority,
     due_date: formatDateForBackend(newTask.value.due_date),
     status: newTask.value.status,
-    project_id: parseInt(selectedProject.value), // Ensure this is an integer
+    project_id: parseInt(selectedProject.value),
     assignee: newTask.value.assignee
-  };
+  }
 
-  console.log('Sending task data:', taskData);
+  console.log('Sending task data:', taskData)
 
   try {
-    await store.dispatch('addTask', taskData);
-    console.log('Task added successfully');
+    await store.dispatch('addTask', taskData)
+    console.log('Task added successfully')
     newTask.value = {
       title: '',
       description: '',
@@ -443,12 +443,12 @@ const addTask = async () => {
       due_date: '',
       assignee: '',
       status: 'To Do'
-    };
-    await store.dispatch('fetchTasks', selectedProject.value);
+    }
+    await store.dispatch('fetchTasks', selectedProject.value)
   } catch (error) {
-    console.error("Failed to add task:", error);
+    console.error("Failed to add task:", error)
     if (error.response) {
-      console.error("Server response:", error.response.data);
+      console.error("Server response:", error.response.data)
     }
   }
 }
@@ -463,7 +463,7 @@ watch(selectedProject, async (newValue) => {
 
 watch(() => store.getters.isAuthenticated, (isAuthenticated) => {
   if (!isAuthenticated) {
-   // router.push('/auth/sign-in')
+    router.push('/auth/sign-in')
   }
 })
 
@@ -492,14 +492,13 @@ const saveTaskDetails = async () => {
   try {
     const updatedTask = {
       ...selectedTask.value,
-      due_date: formatDateForBackend(selectedTask.value.due_date),
-      project_id: parseInt(selectedProject.value) // Добавляем project_id
-    };
-    await store.dispatch('updateTask', updatedTask);
-    closeTaskDetails();
-    await store.dispatch('fetchTasks', selectedProject.value);
+      due_date: formatDateForBackend(selectedTask.value.due_date)
+    }
+    await store.dispatch('updateTask', updatedTask)
+    closeTaskDetails()
+    await store.dispatch('fetchTasks', selectedProject.value)
   } catch (error) {
-    console.error('Failed to update task:', error);
+    console.error('Failed to update task:', error)
   }
 }
 
@@ -565,31 +564,28 @@ const startDrag = (evt, task) => {
 }
 
 const onDrop = async (evt, newStatus) => {
-  const taskID = evt.dataTransfer.getData('taskID');
+  const taskID = evt.dataTransfer.getData('taskID')
   if (!taskID) {
-    console.error("Task ID not found in dataTransfer");
-    return;
+    console.error("Task ID not found in dataTransfer")
+    return
   }
 
-  const task = tasks.value.find(task => task.id === parseInt(taskID));
+  const task = tasks.value.find(task => task.id === parseInt(taskID))
 
   if (task && task.status !== newStatus) {
     try {
-      const updatedTask = {
+      await store.dispatch('updateTask', {
+        ...task,
         status: newStatus,
-        completed: newStatus === 'Done',
-        assignee: task.assignee ? task.assignee.username : null, // Отправляем только имя пользователя
-        project_id: task.project.id, // Отправляем только ID проекта
-      };
-      console.log("Updating task with data:", updatedTask);
-      await store.dispatch('updateTask', updatedTask);
-      console.log("Task updated to new status:", newStatus);
-      await store.dispatch('fetchTasks', selectedProject.value);
+        completed: newStatus === 'Done'
+      })
+      console.log("Task updated to new status:", newStatus)
+      await store.dispatch('fetchTasks', selectedProject.value)
     } catch (error) {
-      console.error('Failed to update task status:', error);
+      console.error('Failed to update task status:', error)
     }
   }
-};
+}
 
 const moveToInProgress = async (task) => {
   await store.dispatch('updateTask', {
@@ -597,32 +593,6 @@ const moveToInProgress = async (task) => {
     status: 'In Progress'
   })
   await store.dispatch('fetchTasks', selectedProject.value)
-}
-
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 'To Do':
-      return ListTodo
-    case 'In Progress':
-      return Play
-    case 'Done':
-      return CheckSquare
-    default:
-      return ListTodo
-  }
-}
-
-const getPriorityIcon = (priority) => {
-  switch (priority) {
-    case 'high':
-      return AlertTriangle
-    case 'medium':
-      return Flag
-    case 'low':
-      return TrendingUp
-    default:
-      return Flag
-  }
 }
 </script>
 
