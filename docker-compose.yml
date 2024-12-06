@@ -10,6 +10,8 @@ services:
       - app-network
     depends_on:
       - frontend
+    volumes:
+      - db-volume:/app/data
 
   frontend:
     build:
@@ -18,6 +20,9 @@ services:
       - "8080:8080"
     networks:
       - app-network
+
+volumes:
+  db-volume:
 
 networks:
   app-network:
