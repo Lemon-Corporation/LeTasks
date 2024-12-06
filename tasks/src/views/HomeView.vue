@@ -564,28 +564,31 @@ const startDrag = (evt, task) => {
 }
 
 const onDrop = async (evt, newStatus) => {
-  const taskID = evt.dataTransfer.getData('taskID')
+  const taskID = evt.dataTransfer.getData('taskID');
   if (!taskID) {
-    console.error("Task ID not found in dataTransfer")
-    return
+    console.error("Task ID not found in dataTransfer");
+    return;
   }
 
-  const task = tasks.value.find(task => task.id === parseInt(taskID))
+  const task = tasks.value.find(task => task.id === parseInt(taskID));
 
   if (task && task.status !== newStatus) {
     try {
-      await store.dispatch('updateTask', {
-        ...task,
+      const updatedTask = {
         status: newStatus,
-        completed: newStatus === 'Done'
-      })
-      console.log("Task updated to new status:", newStatus)
-      await store.dispatch('fetchTasks', selectedProject.value)
+        completed: newStatus === 'Done',
+        assignee: task.assignee ? task.assignee.username : null, // Отправляем только имя пользователя
+        project_id: task.project.id, // Отправляем только ID проекта
+      };
+      console.log("Updating task with data:", updatedTask);
+      await store.dispatch('updateTask', updatedTask);
+      console.log("Task updated to new status:", newStatus);
+      await store.dispatch('fetchTasks', selectedProject.value);
     } catch (error) {
-      console.error('Failed to update task status:', error)
+      console.error('Failed to update task status:', error);
     }
   }
-}
+};
 
 const moveToInProgress = async (task) => {
   await store.dispatch('updateTask', {

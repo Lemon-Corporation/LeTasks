@@ -123,7 +123,7 @@ const store = createStore({
       try {
         console.log('Updating task:', task); // Добавим лог для отладки
         const response = await axios.put(`/api/tasks/${task.id}`, task, {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${state.token}`,
             'Content-Type': 'application/json'
           }
@@ -137,7 +137,7 @@ const store = createStore({
         }
         throw error;
       }
-    },
+    },    
     async deleteTask({ dispatch, state }, taskId) {
       try {
         await axios.delete(`/api/tasks/${taskId}`, {
