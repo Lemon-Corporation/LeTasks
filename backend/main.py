@@ -56,7 +56,7 @@ class UserUpdate(BaseModel):
 class UserProfile(BaseModel):
     username: str
     email: str
-    avatar: Optional[str] = None
+    avatar: Optional[str] = "https://i.pinimg.com/736x/26/8b/ff/268bfff047e6177a186c9511c4afc783.jpg"
 
     class Config:
         orm_mode = True
